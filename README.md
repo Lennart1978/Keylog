@@ -9,6 +9,16 @@ A simple yet effective userspace keylogger for Linux systems. It reads directly 
 - **Daemon Mode**: Can run silently in the background.
 - **Lightweight**: Minimal C implementation with no external dependencies.
 - **German Layout Support**: Optimized for DE keyboard layout (Umlaute, Sonderzeichen).
+- **Email Notification**: Can send the log file to an email address upon termination.
+
+## Prerequisites
+
+To use the email notification feature, you need `msmtp` installed and configured.
+On Debian/Ubuntu:
+```bash
+sudo apt install msmtp
+```
+You must configure `~/.msmtprc` with your email account details.
 
 ## Compilation
 
@@ -44,6 +54,13 @@ If you have multiple devices or auto-detection fails, you can specify the event 
 ```bash
 sudo ./keylog /dev/input/eventX log.txt
 ```
+
+### Email Notification
+To send the log file via email when the program stops, use the `-m` (or `--mail`) flag:
+```bash
+sudo ./keylog -m user@example.com log.txt
+```
+The email will be sent with the subject "Keylog Version 1.5".
 
 ## Stopping the Keylogger
 
