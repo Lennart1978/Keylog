@@ -22,15 +22,10 @@ You must configure `~/.msmtprc` with your email account details.
 
 ## Compilation
 
-Compile with `gcc`:
+Compile with `gcc` to create a small binary: (keylog):
 
 ```bash
-gcc -o keylog keylog.c
-```
-
-For a smaller binary, strip symbols:
-```bash
-gcc -o keylog keylog.c -s -O3
+make
 ```
 
 ## Usage
