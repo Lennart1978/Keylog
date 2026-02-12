@@ -24,6 +24,7 @@ char *email_address = NULL;
 char *global_logfilepath = NULL;
 
 void handle_signal(int signum) {
+    (void)signum;
     running = 0;
 }
 
@@ -131,6 +132,9 @@ void daemonize() {
     int fd0 = open("/dev/null", O_RDWR);
     int fd1 = dup(0);
     int fd2 = dup(0);
+    (void)fd0;
+    (void)fd1;
+    (void)fd2;
 }
 
 // Lookup Tables
